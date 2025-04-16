@@ -160,8 +160,18 @@ namespace LMS.Controllers
         /// or an object containing {success: false} if the user doesn't exist
         /// </returns>
         public IActionResult GetUser(string uid)
-        {           
-            return Json(new { success = false });
+        {
+            var admin = (from a in db.Administrators where a.UId == uid select new { fname = a.FirstName, lname = a.LastName, uid = a.UId }).ToArray();
+            if (admin.Count() != 0)
+                return Json(admin.First());
+			var student = (from s in db.Students where s.UId == uid select new { fname = s.FirstName, lname = s.LastName, uid = s.UId, department = s.Subject }).ToArray();
+			if (student.Count() != 0)
+				return Json(student.First());
+			var prof = (from p in db.Professors where p.UId == uid select new { fname = p.FirstName, lname = p.LastName, uid = p.UId, department = p.Subject }).ToArray();
+			if (prof.Count() != 0)
+				return Json(prof.First());
+
+			return Json(new { success = false });
         }
 
 
