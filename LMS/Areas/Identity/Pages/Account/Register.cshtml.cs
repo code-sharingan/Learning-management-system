@@ -21,6 +21,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace LMS.Areas.Identity.Pages.Account
@@ -194,8 +195,53 @@ namespace LMS.Areas.Identity.Pages.Account
         /// <returns>The uID of the new user</returns>
         string CreateNewUser( string firstName, string lastName, DateTime DOB, string departmentAbbrev, string role )
         {
-            return "unknown";
-        }
+			db.Database.GetDbConnection().Open();
+			var trans = db.Database.GetDbConnection().BeginTransaction();
+			db.Database.AutoTransactionsEnabled = false;
+			db.Database.UseTransaction(trans);
+
+			int highestUId = int.Parse((from s in db.Students orderby s.UId descending select s.UId).FirstOrDefault("u0").Substring(1));
+			int highestProfUId = int.Parse((from p in db.Professors orderby p.UId descending select p.UId).FirstOrDefault("u0").Substring(1));
+			int highestAdminUId = int.Parse((from a in db.Administrators orderby a.UId descending select a.UId).FirstOrDefault("u0").Substring(1));
+			if (highestUId < highestProfUId)
+				highestUId = highestProfUId;
+			if (highestUId < highestAdminUId)
+				highestUId = highestAdminUId;
+			string newUId = "u" + (highestUId + 1).ToString("D7");
+
+			if (role == "Student")
+			{
+				Student newStudent = new();
+				newStudent.FirstName = firstName;
+				newStudent.LastName = lastName;
+				newStudent.Dob = DateOnly.FromDateTime(DOB);
+				newStudent.Subject = departmentAbbrev;
+				newStudent.UId = newUId;
+				db.Students.Add(newStudent);
+			}
+			else if (role == "Professor")
+			{
+				Professor newProfessor = new();
+				newProfessor.FirstName = firstName;
+				newProfessor.LastName = lastName;
+				newProfessor.Dob = DateOnly.FromDateTime(DOB);
+				newProfessor.Subject = departmentAbbrev;
+				newProfessor.UId = newUId;
+				db.Professors.Add(newProfessor);
+			}
+			else //Administrator
+			{
+				Administrator newAdmin = new();
+				newAdmin.FirstName = firstName;
+				newAdmin.LastName = lastName;
+				newAdmin.Dob = DateOnly.FromDateTime(DOB);
+				newAdmin.UId = newUId;
+				db.Administrators.Add(newAdmin);
+			}
+			db.SaveChanges();
+			trans.Commit();
+			return newUId;
+		}
 
         /*******End code to modify********/
     }
