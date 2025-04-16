@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using LMS.Models.LMSModels;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.CodeAnalysis.VisualBasic.Syntax;
 
 // For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 [assembly: InternalsVisibleTo( "LMSControllerTests" )]
@@ -71,8 +72,19 @@ namespace LMS.Controllers
         /// <param name="number">The course number, as in 5530</param>
         /// <returns>The JSON array</returns>
         public IActionResult GetClassOfferings(string subject, int number)
-        {            
-            return Json(null);
+        {
+			var classes = from cl in (from cr in db.Courses where cr.Subject == subject && cr.Num == number select cr.Classes).First().ToArray() select new
+                        {
+                            season = cl.Season,
+                            year = cl.Year,
+                            location = cl.Location,
+                            start = cl.StartTime,
+                            end = cl.EndTime,
+                            fname = cl.ProfessorNavigation.FirstName,
+                            lname = cl.ProfessorNavigation.LastName
+                        };
+
+			return Json(classes.ToArray());
         }
 
         /// <summary>
@@ -89,6 +101,8 @@ namespace LMS.Controllers
         /// <returns>The assignment contents</returns>
         public IActionResult GetAssignmentContents(string subject, int num, string season, int year, string category, string asgname)
         {            
+            var query = from assn in db.Assignments where assn.
+            
             return Content("");
         }
 
