@@ -200,9 +200,9 @@ namespace LMS.Areas.Identity.Pages.Account
 			db.Database.AutoTransactionsEnabled = false;
 			db.Database.UseTransaction(trans);
 
-			int highestUId = int.Parse((from s in db.Students orderby s.UId descending select s.UId).FirstOrDefault("u0").Substring(1));
-			int highestProfUId = int.Parse((from p in db.Professors orderby p.UId descending select p.UId).FirstOrDefault("u0").Substring(1));
-			int highestAdminUId = int.Parse((from a in db.Administrators orderby a.UId descending select a.UId).FirstOrDefault("u0").Substring(1));
+			int highestUId = int.Parse((from s in db.Students orderby s.UId descending select s.UId).ToArray().FirstOrDefault("u0").Substring(1));
+			int highestProfUId = int.Parse((from p in db.Professors orderby p.UId descending select p.UId).ToArray().FirstOrDefault("u0").Substring(1));
+			int highestAdminUId = int.Parse((from a in db.Administrators orderby a.UId descending select a.UId).ToArray().FirstOrDefault("u0").Substring(1));
 			if (highestUId < highestProfUId)
 				highestUId = highestProfUId;
 			if (highestUId < highestAdminUId)
