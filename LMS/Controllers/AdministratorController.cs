@@ -185,7 +185,7 @@ namespace LMS.Controllers
 
 			var conflict = from cl in db.Classes
 						   where (year == cl.Year && season == cl.Season)
-						   && (course == cl.Course // same course during same semester
+						   && (course.First().CourseId == cl.Course.CourseId // same course during same semester
 								|| (location == cl.Location //same location and overlapping time window
 									&& (cl.StartTime.CompareTo(newClass.StartTime) > 0 && cl.StartTime.CompareTo(newClass.EndTime) < 0)
 										|| (cl.EndTime.CompareTo(newClass.StartTime) > 0 && cl.EndTime.CompareTo(newClass.EndTime) < 0))
