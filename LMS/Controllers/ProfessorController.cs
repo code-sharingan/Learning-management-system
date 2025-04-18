@@ -414,7 +414,6 @@ namespace LMS_CustomIdentity.Controllers
         /// <returns>The JSON array</returns>
         public IActionResult GetMyClasses(string uid)
         {
-            db.Database.GetDbConnection().Open();
             var clss = (from c in db.Classes where c.Professor == uid select c).ToArray();
 
             return Json(clss);
