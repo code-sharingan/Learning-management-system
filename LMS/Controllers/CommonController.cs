@@ -75,14 +75,10 @@ namespace LMS.Controllers
         {
 
             var course = (from cr in db.Courses where cr.Subject == subject && cr.Num == number select cr).First();
-            var classes = course.Classes.Select(cl => new {
-                season = cl.Season,
-                year = cl.Year,
-                location = cl.Location,
-                start = cl.StartTime,
-                end = cl.EndTime,
-                fname = cl.ProfessorNavigation.FirstName,
-                lname = cl.ProfessorNavigation.LastName });
+            var classes = (from cl in db.Classes
+                           join pf in db.Professors on cl.Professor equals pf.UId
+                           where cl.CourseId == course.CourseId
+                           select cl);
 
 
             return Json(classes.ToArray());
