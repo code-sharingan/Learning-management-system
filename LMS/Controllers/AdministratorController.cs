@@ -64,6 +64,7 @@ namespace LMS.Controllers
 			if (query.Count() == 0)
 			{
 				db.Departments.Add(newDep);
+				db.SaveChanges();
 				trans.Commit();
 				return Json(new { success = true });
 			} //else, department w/ same subject code already exists
