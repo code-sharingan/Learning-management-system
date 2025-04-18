@@ -94,7 +94,7 @@ namespace LMS.Controllers
                               grade = string.IsNullOrEmpty(e.Grade) ? "--" : e.Grade
                           };
             
-            return Json(classes);
+            return Json(classes.ToArray());
         }
 
         /// <summary>
