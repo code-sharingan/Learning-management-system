@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 using LMS.Models.LMSModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Formatters;
+using Microsoft.EntityFrameworkCore;
+using NuGet.Frameworks;
 
 // For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 [assembly: InternalsVisibleTo( "LMSControllerTests" )]
@@ -75,8 +78,23 @@ namespace LMS.Controllers
         /// <param name="uid">The uid of the student</param>
         /// <returns>The JSON array</returns>
         public IActionResult GetMyClasses(string uid)
-        {           
-            return Json(null);
+        {
+            db.Database.GetDbConnection().Open();
+            var classes = from e in db.Enrolls
+                          join c in db.Classes on e.ClassId equals c.ClassId
+                          join cr in db.Courses on c.CourseId equals cr.CourseId
+                          where e.UId == uid
+                          select new
+                          {
+                              subject = cr.Subject,
+                              number = cr.Num,
+                              name = cr.Name,
+                              season = c.Season,
+                              year = c.Year,
+                              grade = string.IsNullOrEmpty(e.Grade) ? "--" : e.Grade
+                          };
+            
+            return Json(classes);
         }
 
         /// <summary>
@@ -94,8 +112,22 @@ namespace LMS.Controllers
         /// <param name="uid"></param>
         /// <returns>The JSON array</returns>
         public IActionResult GetAssignmentsInClass(string subject, int num, string season, int year, string uid)
-        {            
-            return Json(null);
+        {
+            db.Database.GetDbConnection().Open();
+            var assignments = from c in db.Classes join cr in db.Courses on c.CourseId equals cr.CourseId
+                              join ac in db.AssignmentCategories on c.ClassId equals ac.ClassId
+                              join a in db.Assignments on ac.CategoryId equals a.CategoryId
+                              join e in db.Enrolls on c.ClassId equals e.ClassId
+                              where (cr.Subject == subject && cr.Num == num && c.Season == season && c.Year == year && e.UId == uid)
+                              select new
+                              {
+                                  aname = a.Name,
+                                  cname = ac.Name,
+                                  due = a.Due,
+                                  score = (from s in db.Submissions where s.UId == uid  && s.AssignmentId == a.AssignmentId
+                                           select (int?)s.Score).FirstOrDefault()
+                              };
+            return Json(assignments);
         }
 
 
@@ -119,8 +151,50 @@ namespace LMS.Controllers
         /// <returns>A JSON object containing {success = true/false}</returns>
         public IActionResult SubmitAssignmentText(string subject, int num, string season, int year,
           string category, string asgname, string uid, string contents)
-        {           
-            return Json(new { success = false });
+        {
+            db.Database.GetDbConnection().Open();
+            var trans = db.Database.GetDbConnection().BeginTransaction();
+            db.Database.AutoTransactionsEnabled = false;
+            db.Database.UseTransaction(trans);
+
+            var assingment = (from a in db.Assignments join ac in db.AssignmentCategories on a.CategoryId equals ac.CategoryId
+                        join c in db.Classes on ac.ClassId equals c.ClassId
+                        join cr in db.Courses on c.CourseId equals cr.CourseId
+                        where (a.Name == asgname && cr.Subject == subject && cr.Num == num && c.Year == year && c.Season == season && ac.Name == category)
+                        select a).FirstOrDefault();
+            if(assingment == null)
+            {
+                //that means there is no assignment of this type hence false;
+                trans.Rollback();
+                db.Database.GetDbConnection().Close();
+                return Json(new { success = false });
+
+            }
+
+            var submission = (from s in db.Submissions where s.AssignmentId == assingment.AssignmentId && s.UId == uid select s).FirstOrDefault();
+
+            if(submission==null)
+            {
+                Submission ns = new();
+                ns.UId = uid;
+                ns.AssignmentId = assingment.AssignmentId;
+                ns.Time = DateTime.Now;
+                ns.Contents = contents;
+                ns.Score = 0;
+
+                db.Submissions.Add(ns);
+                trans.Commit();
+                db.Database.GetDbConnection().Close();
+                return Json(new { success = true });
+
+            }
+
+            submission.Contents = contents;
+            submission.Time = DateTime.Now;
+            db.SaveChanges();
+            trans.Commit();
+            db.Database.GetDbConnection().Close();
+            return Json(new { success = true });
         }
 
 
@@ -135,8 +209,45 @@ namespace LMS.Controllers
         /// <returns>A JSON object containing {success = {true/false}. 
         /// false if the student is already enrolled in the class, true otherwise.</returns>
         public IActionResult Enroll(string subject, int num, string season, int year, string uid)
-        {          
-            return Json(new { success = false});
+        {
+
+            db.Database.GetDbConnection().Open();
+            var trans = db.Database.GetDbConnection().BeginTransaction();
+            db.Database.AutoTransactionsEnabled = false;
+            db.Database.UseTransaction(trans);
+
+            var cl = (from c in db.Classes
+                      join cr in db.Courses on c.CourseId equals cr.CourseId
+                      where (cr.Subject == subject && cr.Num == num && c.Year == year && c.Season == season)
+                      select c).FirstOrDefault();
+         
+            if(cl == null)
+            {
+                trans.Rollback();
+                db.Database.GetDbConnection().Close();
+                return Json(new { success = false });
+            }
+
+            var en = (from e in db.Enrolls where e.ClassId == cl.ClassId && e.UId == uid select e).FirstOrDefault();
+
+            if(en == null)
+            {
+                Enroll e = new();
+                e.UId = uid;
+                e.ClassId = cl.ClassId;
+                e.Grade = "--";
+
+                db.Enrolls.Add(e);
+                db.SaveChanges();
+                trans.Commit();
+                db.Database.GetDbConnection().Close();
+                return Json(new { success = true });
+
+            }
+
+            trans.Rollback();
+            db.Database.GetDbConnection().Close();
+            return Json(new { success = false });
         }
 
 
