@@ -127,7 +127,7 @@ namespace LMS.Controllers
                                   score = (from s in db.Submissions where s.UId == uid  && s.AssignmentId == a.AssignmentId
                                            select (int?)s.Score).FirstOrDefault()
                               };
-            return Json(assignments);
+            return Json(assignments.ToArray());
         }
 
 
@@ -183,6 +183,7 @@ namespace LMS.Controllers
                 ns.Score = 0;
 
                 db.Submissions.Add(ns);
+                db.SaveChanges(); 
                 trans.Commit();
                 db.Database.GetDbConnection().Close();
                 return Json(new { success = true });
@@ -264,7 +265,7 @@ namespace LMS.Controllers
         /// <param name="uid">The uid of the student</param>
         /// <returns>A JSON object containing a single field called "gpa" with the number value</returns>
         public IActionResult GetGPA(string uid)
-        {            
+        { 
             return Json(null);
         }
                 

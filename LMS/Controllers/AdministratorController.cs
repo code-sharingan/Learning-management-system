@@ -102,7 +102,7 @@ namespace LMS.Controllers
 		{
 			var query = from p in db.Professors where p.Subject == subject select new { lname = p.LastName, fname = p.FirstName, uid = p.UId };
 
-			return Json(null);
+			return Json(query.ToArray());
 
 		}
 
