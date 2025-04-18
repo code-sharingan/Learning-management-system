@@ -191,7 +191,7 @@ namespace LMS.Controllers
 										|| (cl.EndTime.CompareTo(newClass.StartTime) > 0 && cl.EndTime.CompareTo(newClass.EndTime) < 0))
 						   )
 						   select cl;
-			if (conflict.Count() != 0)
+			if (conflict.ToArray().Count() != 0)
 			{
 				trans.Rollback();
 				return Json(new { success = false });
