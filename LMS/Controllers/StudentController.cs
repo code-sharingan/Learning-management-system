@@ -111,23 +111,23 @@ namespace LMS.Controllers
         /// <param name="year">The year part of the semester for the class the assignment belongs to</param>
         /// <param name="uid"></param>
         /// <returns>The JSON array</returns>
-        public IActionResult GetClassOfferings(string subject, int number)
+        public IActionResult GetAssignmentsInClass(string subject, int num, string season, int year, string uid)
         {
-            var classes = from cour in (from cr in db.Courses where cr.Subject == subject && cr.Num == number select cr)
-                          join cl in db.Classes on cour.CourseId equals cl.CourseId
-                          select
-                          new
-                          {
-                              season = cl.Season,
-                              year = cl.Year,
-                              location = cl.Location,
-                              start = cl.StartTime,
-                              end = cl.EndTime,
-                              fname = cl.ProfessorNavigation.FirstName,
-                              lname = cl.ProfessorNavigation.LastName
-                          };
-
-            return Json(classes.ToArray());
+            db.Database.GetDbConnection().Open();
+            var assignments = from c in db.Classes join cr in db.Courses on c.CourseId equals cr.CourseId
+                              join ac in db.AssignmentCategories on c.ClassId equals ac.ClassId
+                              join a in db.Assignments on ac.CategoryId equals a.CategoryId
+                              join e in db.Enrolls on c.ClassId equals e.ClassId
+                              where (cr.Subject == subject && cr.Num == num && c.Season == season && c.Year == year && e.UId == uid)
+                              select new
+                              {
+                                  aname = a.Name,
+                                  cname = ac.Name,
+                                  due = a.Due,
+                                  score = (from s in db.Submissions where s.UId == uid  && s.AssignmentId == a.AssignmentId
+                                           select (int?)s.Score).FirstOrDefault()
+                              };
+            return Json(assignments.ToArray());
         }
 
 
