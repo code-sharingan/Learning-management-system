@@ -75,11 +75,19 @@ namespace LMS.Controllers
         {
 
             var course = (from cr in db.Courses where cr.Subject == subject && cr.Num == number select cr).First();
-            var classes = (from cl in db.Classes
-                           join pf in db.Professors on cl.Professor equals pf.UId
+            var classes = from cl in db.Classes
                            where cl.CourseId == course.CourseId
-                           select cl);
-
+                           select new
+                           {
+                               season = cl.Season,
+                               year = cl.Year,
+                               location = cl.Location,
+                               start = cl.StartTime.ToString("HH:mm:ss"),
+                               end = cl.EndTime.ToString("HH:mm:ss"),
+                               fname = cl.ProfessorNavigation != null ? cl.ProfessorNavigation.FirstName : "",
+                               lname = cl.ProfessorNavigation != null ? cl.ProfessorNavigation.LastName : "",
+                           };
+            System.Diagnostics.Debug.WriteLine(classes.ToArray());
 
             return Json(classes.ToArray());
         }
