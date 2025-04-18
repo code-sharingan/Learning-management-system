@@ -133,6 +133,7 @@ namespace LMS.Controllers
 			if (query.Count() == 0)
 			{
 				db.Courses.Add(newCourse);
+				db.SaveChanges();
 				trans.Commit();
 				return Json(new { success = true });
 			} //else, course w/ same subject + number already exists
@@ -197,6 +198,7 @@ namespace LMS.Controllers
 			}
 
 			db.Classes.Add(newClass);
+			db.SaveChanges();
 			trans.Commit();
 			return Json(new { success = true });
 		}
