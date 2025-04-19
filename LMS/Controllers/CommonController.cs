@@ -105,16 +105,6 @@ namespace LMS.Controllers
         /// <returns>The assignment contents</returns>
         public IActionResult GetAssignmentContents(string subject, int num, string season, int year, string category, string asgname)
         {
-            //var query = (from assn in 
-            //                (from asgCat in
-            //                    (from c in 
-            //                        (from course in db.Courses where subject == course.Subject && num == course.Num select course.Classes).First().ToArray()
-            //                    where c.Season == season && c.Year == year select c.AssignmentCategories).First().ToArray()
-            //                where asgCat.Name == category select asgCat.Assignments).First().ToArray()
-            //            where assn.Name == asgname select assn).First();
-
-            //return Content(query.Contents);
-            db.Database.GetDbConnection().Open();
             var cls = (from c in db.Classes
                        join cr in db.Courses on c.CourseId equals cr.CourseId
                        where (cr.Subject == subject && cr.Num == num && c.Season == season && c.Year == year)
@@ -128,13 +118,11 @@ namespace LMS.Controllers
                        }).FirstOrDefault();
             if (cls == null)
             {
-                db.Database.GetDbConnection().Close();
                 return Json(null);
             }
             var aCat = (from ac in db.AssignmentCategories where ac.ClassId == cls.ClassId && ac.Name == category select ac).FirstOrDefault();
             if (aCat == null)
             {
-                db.Database.GetDbConnection().Close();
                 return Json(null);
             }
             var assigment = (from a in db.Assignments where a.CategoryId == aCat.CategoryId && a.Name == asgname select a).First();
