@@ -2,13 +2,16 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Security.Cryptography;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using LMS.Models.LMSModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Razor.Language.Extensions;
 using Microsoft.EntityFrameworkCore;
 
 // For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -319,6 +322,11 @@ namespace LMS_CustomIdentity.Controllers
             db.Assignments.Add(a);
             db.SaveChanges();
             trans.Commit();
+
+            foreach(var studen in cls.Enrolls)
+            {
+                update_all_grades(subject, num, season, year , studen.UId);
+            }
             db.Database.GetDbConnection().Close();
             return Json(new { success = true });
         }
@@ -426,6 +434,7 @@ namespace LMS_CustomIdentity.Controllers
             db.SaveChanges();
             trans.Commit();
             db.Database.GetDbConnection().Close();
+            update_all_grades( subject,  num,  season,  year,  uid);
             return Json(new { success = true });
         }
 
@@ -460,8 +469,87 @@ namespace LMS_CustomIdentity.Controllers
         }
 
 
-        
+
         /*******End code to modify********/
+
+        private void update_all_grades(string subject, int num, string season, int year, string uid)
+        {
+            db.Database.GetDbConnection().Open();
+            var trans = db.Database.GetDbConnection().BeginTransaction();
+            db.Database.AutoTransactionsEnabled = false;
+            db.Database.UseTransaction(trans);
+            var cls = (from c in db.Classes
+                       join cr in db.Courses on c.CourseId equals cr.CourseId
+                       where (cr.Subject == subject && cr.Num == num && c.Season == season && c.Year == year)
+                       select c).FirstOrDefault();
+            if (cls == null)
+            {
+                return;
+            }
+            float totalScore = 0;
+            float totalweigt = 0;
+            foreach(var cat in cls.AssignmentCategories)
+            {
+                float maxpoints = 0;
+                float totalPoints = 0;
+                float weight = cat.Weight;
+                totalweigt += weight;
+                foreach(var assign in cat.Assignments)
+                {
+                    maxpoints = maxpoints + (int)assign.Points;
+                    var submission = (from sub in assign.Submissions where sub.UId == uid select sub).FirstOrDefault();
+                    if (submission != null)
+                    {
+                        totalPoints = totalPoints + (int)submission.Score;
+
+                    }
+                        
+                    
+
+                }
+                totalScore = totalScore + (totalPoints / maxpoints) * weight;
+
+
+            }
+            totalScore = (totalScore / totalweigt)*100;
+            string grade = GetLetterGrade(totalScore);
+
+            var enrolled = (from e in db.Enrolls where e.ClassId == cls.ClassId && e.UId == uid select e).First();
+            enrolled.Grade = grade;
+            db.SaveChanges();
+            trans.Commit();
+            db.Database.GetDbConnection().Close();
+
+
+            //if (cls != null)
+            //{
+            //    var aCat = (from ac in db.AssignmentCategories where ac.ClassId == cls.ClassId && ac.Name == category select ac).ToArray();
+            //    if (aCat == null)
+            //    {
+            //        var assigment = (from a in db.Assignments where a.CategoryId == aCat.CategoryId && a.Name == asgname select a).First();
+            //    }
+
+            //}
+
+
+        }
+
+
+        private string GetLetterGrade(double percent)
+        {
+            if (percent >= 93) return "A";
+            if (percent >= 90) return "A-";
+            if (percent >= 87) return "B+";
+            if (percent >= 83) return "B";
+            if (percent >= 80) return "B-";
+            if (percent >= 77) return "C+";
+            if (percent >= 73) return "C";
+            if (percent >= 70) return "C-";
+            if (percent >= 67) return "D+";
+            if (percent >= 63) return "D";
+            if (percent >= 60) return "D-";
+            return "E";
+        }
     }
 }
 
