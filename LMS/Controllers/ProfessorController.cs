@@ -292,7 +292,7 @@ namespace LMS_CustomIdentity.Controllers
                 db.Database.GetDbConnection().Close();
                 return Json(new { success = false });
             }
-
+            //todo - have to check if the assignemtn already exits
             Assignment a = new();
             a.Name = asgname;
             a.Contents = asgcontents;
