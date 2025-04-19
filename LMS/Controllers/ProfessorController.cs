@@ -167,8 +167,9 @@ namespace LMS_CustomIdentity.Controllers
         /// <returns>The JSON array</returns>
         public IActionResult GetAssignmentsInCategory(string subject, int num, string season, int year, string category)
         {
-            db.Database.GetDbConnection().Open();
-            var assignments = from a in db.Assignments join ac in db.AssignmentCategories on a.CategoryId equals ac.CategoryId
+            if (category != null)
+            { 
+                var assignments = from a in db.Assignments join ac in db.AssignmentCategories on a.CategoryId equals ac.CategoryId
                               join c in db.Classes on ac.ClassId equals c.ClassId join cr in db.Courses on c.CourseId equals cr.CourseId
                               where (ac.Name == category && cr.Subject == subject && cr.Num == num && c.Season == season && c.Year == year)
                               select new
@@ -176,11 +177,26 @@ namespace LMS_CustomIdentity.Controllers
                                   aname = a.Name,
                                   cname = ac.Name,
                                   due = a.Due,
-                                  submissions = (from s in db.Submissions where s.AssignmentId == a.AssignmentId select s).ToList().Count()
+                                  submissions = (from s in db.Submissions where s.AssignmentId == a.AssignmentId select s).ToArray().Count()
                               };
-
-            db.Database.GetDbConnection().Close();
-            return Json(assignments.ToArray());
+				return Json(assignments.ToArray());
+			}
+            else
+            {
+			    var assignments = from a in db.Assignments
+								join ac in db.AssignmentCategories on a.CategoryId equals ac.CategoryId
+								join c in db.Classes on ac.ClassId equals c.ClassId
+								join cr in db.Courses on c.CourseId equals cr.CourseId
+								where (cr.Subject == subject && cr.Num == num && c.Season == season && c.Year == year)
+								select new
+								{
+									aname = a.Name,
+									cname = ac.Name,
+									due = a.Due,
+									submissions = (from s in db.Submissions where s.AssignmentId == a.AssignmentId select s).ToArray().Count()
+								};
+				return Json(assignments.ToArray());
+			}
         }
 
 
