@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Security.Cryptography.Xml;
 using System.Threading.Tasks;
 using LMS.Models.LMSModels;
 using Microsoft.AspNetCore.Authorization;
@@ -265,8 +266,30 @@ namespace LMS.Controllers
         /// <param name="uid">The uid of the student</param>
         /// <returns>A JSON object containing a single field called "gpa" with the number value</returns>
         public IActionResult GetGPA(string uid)
-        { 
-            return Json(null);
+        {
+            var enrolls = (from s in db.Students where s.UId == uid select s.Enrolls).First().ToArray();
+            float gpaSum = 0;
+            Dictionary<string, float> gpaTable = new Dictionary<string, float>{
+                {"--", 0f },
+                {"A", 4.0f },
+                {"A-", 3.7f },
+                {"B+", 3.3f },
+                {"B", 3.0f },
+                {"B-", 2.7f },
+                {"C+", 2.3f },
+                {"C", 2.0f },
+                {"C-", 1.7f },
+                {"D+", 1.3f },
+                {"D", 1.0f },
+                {"D-", 0.7f },
+                {"D-", 0f }
+			};
+            foreach (var enroll in enrolls)
+            {
+                gpaSum += gpaTable[enroll.Grade];
+            }
+
+            return Json(new { gpa = gpaSum / enrolls.Length});
         }
                 
         /*******End code to modify********/
