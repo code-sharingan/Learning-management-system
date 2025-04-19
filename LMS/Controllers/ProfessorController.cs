@@ -5,6 +5,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using LMS.Models.LMSModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -346,7 +347,12 @@ namespace LMS_CustomIdentity.Controllers
             var cls = (from c in db.Classes
                        join cr in db.Courses on c.CourseId equals cr.CourseId
                        where (cr.Subject == subject && cr.Num == num && c.Season == season && c.Year == year)
-                       select c).FirstOrDefault();
+                       select new { 
+                       ClassId=c.ClassId,
+                       subject=cr.Subject,
+                       num=cr.Num,
+                       season=c.Season,
+                       year=c.Year}).FirstOrDefault();
             if (cls == null)
             { 
                 db.Database.GetDbConnection().Close();
@@ -359,7 +365,14 @@ namespace LMS_CustomIdentity.Controllers
                 return Json(null);
             }
             var assigment = (from a in db.Assignments where a.CategoryId == aCat.CategoryId && a.Name == asgname select a).First();
-            var submissions = assigment.Submissions.ToArray();
+            var submissions = (from s in db.Submissions join st in db.Students on s.UId equals st.UId where s.AssignmentId == assigment.AssignmentId select new
+            {
+                fname=st.FirstName,
+                lname = st.LastName,
+                uid=st.UId,
+                time=s.Time,
+                score=s.Score
+            }).ToArray();
             return Json(submissions);
         }
 
