@@ -501,15 +501,9 @@ namespace LMS_CustomIdentity.Controllers
                     if (submission != null)
                     {
                         totalPoints = totalPoints + (int)submission.Score;
-
                     }
-                        
-                    
-
                 }
                 totalScore = totalScore + (totalPoints / maxpoints) * weight;
-
-
             }
             totalScore = (totalScore / totalweigt)*100;
             string grade = GetLetterGrade(totalScore);
