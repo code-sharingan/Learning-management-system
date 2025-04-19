@@ -321,13 +321,13 @@ namespace LMS_CustomIdentity.Controllers
             a.CategoryId = aCat.CategoryId;
             db.Assignments.Add(a);
             db.SaveChanges();
+            var stud = (from e in db.Enrolls where e.ClassId == cls.ClassId select e).ToArray();
             trans.Commit();
-
-            foreach(var studen in cls.Enrolls)
-            {
-                update_all_grades(subject, num, season, year , studen.UId);
-            }
             db.Database.GetDbConnection().Close();
+            foreach (var stuu in stud)
+            {
+                update_all_grades(subject, num, season, year, stuu.UId);
+            }
             return Json(new { success = true });
         }
 
