@@ -150,4 +150,4 @@ This project is open source and available under the [MIT License](LICENSE).
 ## Author
 
 **Your Name**
-[GitHub](https://github.com/code-sharingan) | [LinkedIn](https://linkedin.com/in/shubhamanilsingh)
+[Shubham Singh](https://github.com/code-sharingan) | [LinkedIn](https://linkedin.com/in/shubhamanilsingh)
